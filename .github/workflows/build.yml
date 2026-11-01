@@ -29,10 +29,27 @@ jobs:
         with:
           packages: 'platform-tools'
 
+      
       - name: Unpack Xion project
         run: |
           mkdir -p src
-          unzip -q masaedi.zip -d src
+
+          ZIP_FILE=$(find "$GITHUB_WORKSPACE" \
+            -maxdepth 2 \
+            -type f -iname "*.zip" \
+            ! -path "*/.git/*" \
+            -print -quit)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No ZIP file found in repository!"
+            echo "Repository files:"
+            ls -la
+            exit 1
+          fi
+
+          echo "Found project archive: $ZIP_FILE"
+          unzip -q "$ZIP_FILE" -d src
+          
 
       - name: Detect Gradle project
         id: project
