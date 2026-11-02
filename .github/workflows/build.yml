@@ -92,6 +92,6 @@ jobs:
       - name: Upload Xion APK
         uses: actions/upload-artifact@v4
         with:
-          name: Xion-3.1-Debug-APK
+          name: Xion-4.0
           path: src/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
