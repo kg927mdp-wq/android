@@ -1,97 +1,39 @@
-
-name: Build Xion APK
+name: Build XION APK
 
 on:
-  push:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: '8.9'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools'
+      - name: Build XION APK
+        run: gradle --no-daemon assembleDebug
 
-      
-      - name: Unpack Xion project
-        run: |
-          mkdir -p src
-
-          ZIP_FILE=$(find "$GITHUB_WORKSPACE" \
-            -maxdepth 2 \
-            -type f -iname "*.zip" \
-            ! -path "*/.git/*" \
-            -print -quit)
-
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No ZIP file found in repository!"
-            echo "Repository files:"
-            ls -la
-            exit 1
-          fi
-
-          echo "Found project archive: $ZIP_FILE"
-          unzip -q "$ZIP_FILE" -d src
-          
-
-      - name: Detect Gradle project
-        id: project
-        run: |
-          PROJECT_DIR=$(find "$GITHUB_WORKSPACE/src" \
-            -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) \
-            -print -quit | xargs -r dirname)
-
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Gradle project not found!"
-            exit 1
-          fi
-
-          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found project: $PROJECT_DIR"
-
-      - name: Build Xion Debug APK
-        working-directory: ${{ steps.project.outputs.dir }}
-        run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug --no-daemon --stacktrace
-          else
-            gradle assembleDebug --no-daemon --stacktrace
-          fi
-
-      - name: Verify APK
-        run: |
-          APK=$(find src -type f \
-            -path "*/build/outputs/apk/debug/*.apk" \
-            -print -quit)
-
-          if [ -z "$APK" ]; then
-            echo "ERROR: APK was not generated!"
-            exit 1
-          fi
-
-          echo "APK generated successfully: $APK"
-
-      - name: Upload Xion APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Xion-4.0
-          path: src/**/build/outputs/apk/debug/*.apk
+          name: Xion Assistant 
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
