@@ -1,4 +1,3 @@
-
 name: Build XION APK
 
 on:
@@ -24,37 +23,45 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Extract XION Source
+        run: |
+          if [ ! -f "XION-Android-Source.zip" ]; then
+            echo "XION source ZIP not found!"
+            exit 1
+          fi
+
+          mkdir -p xion-source
+          unzip -o XION-Android-Source.zip -d xion-source
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Locate XION Project
+      - name: Locate Project
         id: locate
         run: |
-          SETTINGS=$(find . -name settings.gradle.kts \
-            -not -path '*/.gradle/*' -print -quit)
+          SETTINGS=$(find xion-source -name settings.gradle.kts -print -quit)
 
           if [ -z "$SETTINGS" ]; then
-            echo "ERROR: settings.gradle.kts not found!"
-            find . -maxdepth 4 -type f | head -100
+            echo "settings.gradle.kts not found!"
+            find xion-source -maxdepth 5 -type f
             exit 1
           fi
 
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found project: $PROJECT_DIR"
+          echo "XION project found: $PROJECT_DIR"
 
-      - name: Build APK
+      - name: Build XION APK
         run: |
           gradle --no-daemon \
             -p "${{ steps.locate.outputs.dir }}" \
             assembleDebug
 
-      - name: Upload XION APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: XION-APK
-          path: "**/app/build/outputs/apk/debug/*.apk"
+          path: xion-source/**/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          
